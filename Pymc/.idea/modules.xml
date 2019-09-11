@@ -3,7 +3,9 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/Pymc.iml" filepath="$PROJECT_DIR$/.idea/Pymc.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../../hIPPYlib/hippylib/.idea/hippylib.iml" filepath="$PROJECT_DIR$/../../hIPPYlib/hippylib/.idea/hippylib.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../Pymc3/pymc3/.idea/pymc3.iml" filepath="$PROJECT_DIR$/../../Pymc3/pymc3/.idea/pymc3.iml" />
+      <module fileurl="file://$USER_HOME$/anaconda3/envs/Bayes/lib/python3.7/site-packages/tensorflow_probability/.idea/tensorflow_probability.iml" filepath="$USER_HOME$/anaconda3/envs/Bayes/lib/python3.7/site-packages/tensorflow_probability/.idea/tensorflow_probability.iml" />
     </modules>
   </component>
 </project>
