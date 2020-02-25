@@ -1,0 +1,1 @@
+I was intended to make this model in jax, but we stay in Tensorflow at the moment
