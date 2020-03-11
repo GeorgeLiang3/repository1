@@ -9,7 +9,7 @@ def gradient_decent(unnormalized_posterior_log_prob,steps = 1000,learning_rate =
 
     mu = tf.constant([-1., -1.])
 
-    for i in tf.range(steps):
+    for _ in tf.range(steps):
         with tf.GradientTape() as t:  
             t.watch(mu)
             theta1 = mu[0]
@@ -23,7 +23,7 @@ def gradient_decent(unnormalized_posterior_log_prob,steps = 1000,learning_rate =
 
 ## Hessian
 @tf.function
-def Full_Hessian():
+def Full_Hessian(MAP,unnormalized_posterior_log_prob):
     Hess = tf.TensorArray(tf.float32, size=2)
     j=0
     for i in range(2):
@@ -31,7 +31,7 @@ def Full_Hessian():
             t.watch(MAP)
             with tf.GradientTape() as tt:
                 tt.watch(MAP)
-                loss = -joint_log_post(D,MAP[0],MAP[1])
+                loss = -unnormalized_posterior_log_prob(MAP[0],MAP[1])
             jac = tt.gradient(loss,MAP,unconnected_gradients='zero')[i]
         hess = t.gradient(jac,MAP,unconnected_gradients = 'none')
         Hess = Hess.write(j,hess)
@@ -51,14 +51,14 @@ def matrixcompute(matrix1,matrix2,Cov):
     return result
 
 @tf.function
-def negative_log_post(vars):
-    return(tf.negative(joint_log_post(D,vars[0],vars[1])))
+def negative_log_post(unnormalized_posterior_log_prob,vars):
+    return(tf.negative(unnormalized_posterior_log_prob(vars[0],vars[1])))
 
 
 @tf.function
-def acceptance_gpCN(m_current , m_proposed):
-    delta_current = tf.add(negative_log_post(m_current),matrixcompute(m_current,MAP,C_post))
-    delta_proposed = tf.add(negative_log_post(m_proposed),matrixcompute(m_proposed,MAP,C_post))
+def acceptance_gpCN(unnormalized_posterior_log_prob,m_current , m_proposed,MAP,C_post):
+    delta_current = tf.add(negative_log_post(unnormalized_posterior_log_prob,m_current),matrixcompute(m_current,MAP,C_post))
+    delta_proposed = tf.add(negative_log_post(unnormalized_posterior_log_prob,m_proposed),matrixcompute(m_proposed,MAP,C_post))
 
     ## calculate accept ratio if exp()<1
     accept_ratio = tf.exp(tf.subtract(delta_current,delta_proposed))
@@ -75,7 +75,7 @@ def acceptance_gpCN(m_current , m_proposed):
 
 
 @tf.function
-def draw_proposal(m_current):
+def draw_proposal(m_current,MAP, C_post):
     
     beta = tf.constant(0.25)
     _term1 = MAP
@@ -97,23 +97,35 @@ def draw_proposal(m_current):
     return m_proposed
 
 
-def run_chain():
-    MAP = gradient_decent()
-    New_Hessian = Full_Hessian()
-    burn_in = 100
-    steps = number_of_steps
+def run_chain(num_results,burnin,initial_chain_state,unnormalized_posterior_log_prob):
+    MAP = gradient_decent(unnormalized_posterior_log_prob)
+    New_Hessian = Full_Hessian(MAP,unnormalized_posterior_log_prob)
+
+    # define prior covariance
+    cov= [[1.,0.],[0.,1.]]
+    cov = tf.convert_to_tensor(cov,dtype = tf.float32)
+
+    # construct covariance of posterior
+    tf.linalg.inv(cov)
+    Sum = 0
+    Sum = tf.add(New_Hessian,tf.linalg.inv(cov))
+    C_post = tf.linalg.inv(Sum)
+    
+    
+    burn_in = burnin
+    steps = num_results
     k = 0
     accepted = []
     rejected = []
 
-    m_current = mu_init  # init m
+    m_current = initial_chain_state  # init m
     
     
     for k in range(steps+burn_in):
 
-        m_proposed = draw_proposal(m_current)
+        m_proposed = draw_proposal(m_current,MAP,C_post)
 
-        if acceptance_gpCN(m_current,m_proposed):
+        if acceptance_gpCN(unnormalized_posterior_log_prob,m_current , m_proposed,MAP,C_post):
             m_current = m_proposed
             if k > burn_in:
                 accepted.append(m_proposed.numpy())
@@ -132,11 +144,3 @@ def run_chain():
 
 
 
-cov= [[1.,0.],[0.,1.]]
-cov = tf.convert_to_tensor(cov,dtype = tf.float32)
-tf.linalg.inv(cov)
-
-Sum = 0
-Sum = tf.add(New_Hessian,tf.linalg.inv(cov))
-C_post = tf.linalg.inv(Sum)
-C_post 
