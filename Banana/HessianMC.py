@@ -85,9 +85,9 @@ def draw_proposal(m_current,MAP, C_post):
     ## sqrt(1-beta^2)()
     _term2 = tf.multiply(tem_1,(tf.subtract(m_current,MAP)))
     
-    Xi = tfd.MultivariateNormalFullCovariance(
+    Xi = tfd.MultivariateNormalTriL(
             loc = 0,
-            covariance_matrix= C_post)
+            scale_tril=tf.linalg.cholesky(C_post))
 
     Xi_s = tfd.Sample(Xi)
     _term3 = tf.multiply(beta,Xi_s.sample())
@@ -96,20 +96,14 @@ def draw_proposal(m_current,MAP, C_post):
     
     return m_proposed
 
+def Laplace_appro(H,C_prior):
+    return tf.linalg.inv((tf.add(H,tf.linalg.inv(C_prior))))
 
-def run_chain(num_results,burnin,initial_chain_state,unnormalized_posterior_log_prob):
+def run_chain_hessian(cov,num_results,burnin,initial_chain_state,unnormalized_posterior_log_prob):
     MAP = gradient_decent(unnormalized_posterior_log_prob)
-    New_Hessian = Full_Hessian(MAP,unnormalized_posterior_log_prob)
+    Hessian_matrix = Full_Hessian(MAP,unnormalized_posterior_log_prob)
 
-    # define prior covariance
-    cov= [[1.,0.],[0.,1.]]
-    cov = tf.convert_to_tensor(cov,dtype = tf.float32)
-
-    # construct covariance of posterior
-    tf.linalg.inv(cov)
-    Sum = 0
-    Sum = tf.add(New_Hessian,tf.linalg.inv(cov))
-    C_post = tf.linalg.inv(Sum)
+    C_post = Laplace_appro(Hessian_matrix,cov)
     
     
     burn_in = burnin

@@ -3,7 +3,7 @@ import tensorflow_probability as tfp
 tfd = tfp.distributions
 
 @tf.function
-def run_HMC(num_results,burnin,initial_chain_state,unnormalized_posterior_log_prob):
+def run_chain_HMC(num_results,burnin,initial_chain_state,unnormalized_posterior_log_prob):
     samples, kernel_results = tfp.mcmc.sample_chain(
         num_results=num_results,
         current_state=initial_chain_state,

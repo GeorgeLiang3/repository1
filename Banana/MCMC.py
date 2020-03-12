@@ -2,7 +2,8 @@ from Banana import Banana_dist
 import tensorflow as tf
 import numpy as np
 from RMH import run_chain_RMH
-from HMC import run_HMC
+from HMC import run_chain_HMC
+from HessianMC import run_chain_hessian
 
 
 class MCMC:
@@ -32,11 +33,12 @@ class MCMC:
             return samples,kernel_results
 
         if self.method == 'HMC': # Hamiltonian Monte Carlo algoritem
-            samples,kernel_results = run_HMC(self.num_results,self.brunin,
+            samples,kernel_results = run_chain_HMC(self.num_results,self.brunin,
                                         self.initial_chain_state,self.unnormalized_posterior_log_prob)
             return  samples,kernel_results
 
         
         if self.method == 'HessianMC':
-            accepted
-        #     return accepted, rejuected
+            accepted, rejuected = run_chain_hessian(self.target_distribution.cov,self.num_results,self.brunin,
+                                        self.initial_chain_state,self.unnormalized_posterior_log_prob)
+            return accepted, rejuected
