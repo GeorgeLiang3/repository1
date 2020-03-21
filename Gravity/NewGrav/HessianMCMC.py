@@ -12,7 +12,7 @@ def constant64(i):
 
 
 class HessianMCMC():
-    def __init__(self, Number_para, negative_log_posterior, Data, MAP, C_prior, number_sample, number_burnin, mu_init):
+    def __init__(self, Number_para, negative_log_posterior, Data, MAP, C_prior, number_sample, number_burnin, mu_init, beta=constant64(0.1)):
         self.Number_para = Number_para
         self.negative_log_posterior = negative_log_posterior
         self.Data = Data
@@ -21,7 +21,7 @@ class HessianMCMC():
         self.number_sample = number_sample
         self.number_burnin = number_burnin
         self.mu_init = mu_init
-        self.beta = constant64(0.1)
+        self.beta = beta
 
     def Full_Hessian(self):
         Hess = tf.TensorArray(tf.float64, size=self.Number_para)
@@ -56,9 +56,9 @@ class HessianMCMC():
         return result
 
     def acceptance_gpCN(self, m_current, m_proposed):
-        delta_current = tf.add(self.negative_log_posterior(
+        delta_current = tf.subtract(self.negative_log_posterior(
             self.Data, m_current), self.matrixcompute(m_current, self.MAP, self.cov_post))
-        delta_proposed = tf.add(self.negative_log_posterior(
+        delta_proposed = tf.subtract(self.negative_log_posterior(
             self.Data, m_proposed), self.matrixcompute(m_proposed, self.MAP, self.cov_post))
 
         # calculate accept ratio if exp()<1
@@ -83,9 +83,9 @@ class HessianMCMC():
         # sqrt(1-beta^2)()
         _term2 = tf.multiply(tem_1, (tf.subtract(m_current, self.MAP)))
 
-        Xi = tfd.MultivariateNormalFullCovariance(
+        Xi = tfd.MultivariateNormalTriL(
             loc=0,
-            covariance_matrix=self.cov_post)
+            scale_tril=tf.linalg.cholesky(self.cov_post))
 
         Xi_s = tfd.Sample(Xi)
         _term3 = tf.multiply(self.beta, Xi_s.sample())
@@ -119,6 +119,6 @@ class HessianMCMC():
                 m_current = m_current
                 rejected.append(m_proposed.numpy())
 
-        self.acceptance_rate = accepted/self.number_sample
+        self.acceptance_rate = np.shape(accepted)[0]/self.number_sample
 
         return accepted, rejected
