@@ -41,7 +41,7 @@ def svgd_kernel(X0):
     # compute the rbf kernel
     Kxy = tf.exp(-H / h ** 2 / 2.0)
 
-    dxkxy = -tf.matmul(Kxy, X0)
+    dxkxy = tf.negative(tf.matmul(Kxy, X0))
     sumkxy = tf.expand_dims(tf.reduce_sum(Kxy, axis=1), 1)
     dxkxy = tf.add(dxkxy, tf.multiply(X0, sumkxy)) / (h ** 2)
 
