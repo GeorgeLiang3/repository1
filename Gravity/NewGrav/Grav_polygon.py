@@ -1,15 +1,12 @@
-import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
-import scipy
-from scipy.stats import norm
 import tensorflow_probability as tfp
-import seaborn as sns
-import pandas as pd
-import corner
 import math as m
-import copy
-from HessianMCMC import HessianMCMC
+
+from GaussianProcess import GaussianProcess2Dlayer
+
+
+tfd = tfp.distributions
 
 
 def constant64(i):
@@ -33,13 +30,21 @@ pi = constant64(m.pi)
 
 
 class Gravity_Polygon(tf.Module):
-    def __init__(self, obs_N, Range, rho):
+    def __init__(self, obs_N, Range, rho, thickness, Number_para):
         super(Gravity_Polygon, self).__init__()
         self.obs_N = obs_N
         self.Range = Range
+        self.Number_para = Number_para
         self.rho = constant64(rho)        # density difference   kg/m^3
         self.x_obv = tf.linspace(constant64(-70.), constant64(70.), self.obs_N)
         self.y_obv = tf.zeros(tf.shape(self.x_obv), dtype=tf.float64)
+        self.number_of_fixpoints = 10
+        self.depth = constant64(-50)
+        self.thickness = thickness
+        # set some points out of the model area to eliminate the boundary effect
+
+        self.gp = GaussianProcess2Dlayer(
+            self.Range, self.depth, self.Number_para, self.thickness)
 
     def A(self, x1, z1, x2, z2):
         numerator = (x2-x1)*(x1*z2-x2*z1)
@@ -123,36 +128,51 @@ class Gravity_Polygon(tf.Module):
         gravity = 2*G*self.rho * \
             tf.reduce_sum(-self.Z_new(x1, z1, x2, z2), axis=1)
 
-        print('tracing')
-        tf.print('executing')
+        # print('tracing')
+        # tf.print('executing')
+
         return tf.squeeze(gravity)
 
-    # @tf.function
-    # def joint_log_post(D,_control_position):
-    #     """
-    #     D: is the observation data
-    #     ps: Positions,Variable(N elements vector)
-    #     """
-    #     # define random variables prior
+    def set_prior(self, mu_prior, cov_prior, cov):
+        self.mu_prior = mu_prior
+        self.cov_prior = cov_prior
+        # likelihood covariance
+        self.cov = cov
 
-    #     mvn_prior = tfd.MultivariateNormalTriL(
-    #             loc = mu_prior,
-    #             scale_tril=tf.linalg.cholesky(cov_prior))
-    #     # define likelihood
+    @tf.function
+    def joint_log_post(self, Data, _control_position):
+        """[summary]
 
-    #     _control_index = tf.linspace(constant64(-70),constant64(70),Number_para)
-    #     __x,__z = GaussianProcess_model(kernel,observation_index_points,_control_index,_control_position)
+        Arguments:
+            Data {[Tensor]} -- [description]
+            _control_position {[Tensor]} -- [description]
 
-    #     Gm_ = grav_new(__x,__z)
+        Returns:
+            [type] -- [description]
+        """
+        self.Data = Data
+        # define random variables prior
 
-    #     mvn_likelihood = tfd.MultivariateNormalTriL(
-    #             loc = Gm_,
-    #             scale_tril= tf.linalg.cholesky(cov))
+        mvn_prior = tfd.MultivariateNormalTriL(
+            loc=self.mu_prior,
+            scale_tril=tf.linalg.cholesky(self.cov_prior))
+        # define likelihood
 
-    #     # return the posterior probability
-    #     return (mvn_prior.log_prob(_control_position)
-    #             +mvn_likelihood.log_prob(D))
+        _control_index = tf.linspace(
+            self.Range[0], self.Range[1], _control_position.shape[0])
 
-    # @tf.function
-    # def negative_log_posterior(D,_control_position):
-    #     return -joint_log_post(D,_control_position)
+        __x, __z = self.gp.GaussianProcess(_control_index, _control_position)
+
+        Gm_ = self.calculate_gravity(__x, __z)
+
+        mvn_likelihood = tfd.MultivariateNormalTriL(
+            loc=Gm_,
+            scale_tril=tf.linalg.cholesky(self.cov))
+
+        # return the posterior probability
+        return (mvn_prior.log_prob(_control_position)
+                + mvn_likelihood.log_prob(Data))
+
+    @tf.function
+    def negative_log_posterior(self, Data, _control_position):
+        return -self.joint_log_post(Data, _control_position)
