@@ -5,7 +5,7 @@ tfd = tfp.distributions
 
 # find MAP point
 @tf.function()
-def gradient_decent(unnormalized_posterior_log_prob, steps=1000, learning_rate=0.001):
+def gradient_decent(unnormalized_posterior_log_prob, steps=10000, learning_rate=0.001):
 
     mu = tf.constant([[-1., -1.]])
 
@@ -14,7 +14,7 @@ def gradient_decent(unnormalized_posterior_log_prob, steps=1000, learning_rate=0
             t.watch(mu)
             loss = tf.negative(unnormalized_posterior_log_prob(mu))
             dlossdmu = t.gradient(loss, mu)
-            mu = mu - learning_rate*dlossdmu
+            mu = mu - learning_rate * dlossdmu
     return mu
 
 
@@ -32,7 +32,7 @@ def Full_Hessian(MAP, unnormalized_posterior_log_prob):
             jac = tt.gradient(loss, MAP, unconnected_gradients='zero')[0][i]
         hess = t.gradient(jac, MAP, unconnected_gradients='none')
         Hess = Hess.write(j, hess)
-        j = j+1
+        j = j + 1
     hessian = tf.squeeze(Hess.stack())
     return hessian
 
@@ -46,7 +46,7 @@ def matrixcompute(matrix1, matrix2, Cov):
     matrix_T = tf.transpose(matrix)
     Cov_inv = tf.linalg.inv(Cov)
     result = tf.multiply(tf.constant(
-        1/2), tf.matmul(tf.matmul(matrix_T, Cov_inv), matrix))
+        1 / 2), tf.matmul(tf.matmul(matrix_T, Cov_inv), matrix))
     return result
 
 
@@ -58,9 +58,9 @@ def negative_log_post(unnormalized_posterior_log_prob, vars):
 @tf.function
 def acceptance_gpCN(unnormalized_posterior_log_prob, m_current, m_proposed, MAP, C_post):
 
-    delta_current = tf.add(negative_log_post(
+    delta_current = tf.subtract(negative_log_post(
         unnormalized_posterior_log_prob, m_current), matrixcompute(m_current, MAP, C_post))
-    delta_proposed = tf.add(negative_log_post(
+    delta_proposed = tf.subtract(negative_log_post(
         unnormalized_posterior_log_prob, m_proposed), matrixcompute(m_proposed, MAP, C_post))
 
     # calculate accept ratio if exp()<1
@@ -83,7 +83,7 @@ def draw_proposal(m_current, MAP, C_post):
     _term1 = MAP
 
     # sqrt term
-    tem_1 = tf.convert_to_tensor(tf.sqrt(1-beta**2), dtype=tf.float32)
+    tem_1 = tf.convert_to_tensor(tf.sqrt(1 - beta**2), dtype=tf.float32)
     # sqrt(1-beta^2)()
     _term2 = tf.multiply(tem_1, (tf.subtract(m_current, MAP)))
 
@@ -99,11 +99,12 @@ def draw_proposal(m_current, MAP, C_post):
     return m_proposed
 
 
+@tf.function
 def Laplace_appro(H, C_prior):
     return tf.linalg.inv((tf.add(H, tf.linalg.inv(C_prior))))
 
 
-def run_chain_hessian(cov, num_results, burnin, initial_chain_state, unnormalized_posterior_log_prob):
+def run_chain_hessian(cov, num_results, burnin, unnormalized_posterior_log_prob):
     MAP = gradient_decent(unnormalized_posterior_log_prob)
     Hessian_matrix = Full_Hessian(MAP, unnormalized_posterior_log_prob)
 
@@ -115,9 +116,9 @@ def run_chain_hessian(cov, num_results, burnin, initial_chain_state, unnormalize
     accepted = []
     rejected = []
 
-    m_current = initial_chain_state  # init m
+    m_current = MAP  # init m
 
-    for k in range(steps+burn_in):
+    for k in range(steps + burn_in):
 
         m_proposed = draw_proposal(m_current, MAP, C_post)
 
@@ -130,3 +131,57 @@ def run_chain_hessian(cov, num_results, burnin, initial_chain_state, unnormalize
             rejected.append(m_proposed.numpy()[0])
 
     return accepted, rejected
+
+
+# from scipy.stats import multivariate_normal
+# import matplotlib.pyplot as plt
+
+
+# def run_chain_update_Hessian(cov, num_results, burnin, unnormalized_posterior_log_prob):
+
+#     MAP = gradient_decent(unnormalized_posterior_log_prob)
+#     Hessian_matrix = Full_Hessian(MAP, unnormalized_posterior_log_prob)
+
+#     C_post = Laplace_appro(Hessian_matrix, cov)
+
+#     burn_in = burnin
+#     steps = num_results
+#     k = 0
+#     accepted = []
+#     rejected = []
+
+#     m_current = MAP  # init m
+
+#     for k in range(steps + burn_in):
+
+#         Hessian_matrix = Full_Hessian(
+#             m_current, unnormalized_posterior_log_prob)
+
+#         C_propose = Laplace_appro(Hessian_matrix, cov)
+#         print(m_current)
+#         try:
+#             m_proposed = draw_proposal(m_current, MAP, C_propose)
+#         except:
+#             pass
+
+#         if acceptance_gpCN(unnormalized_posterior_log_prob, m_current, m_proposed, MAP, C_post):
+#             m_current = m_proposed
+#             if k > burn_in:
+#                 accepted.append(m_proposed.numpy()[0])
+#         else:
+#             m_current = m_current
+#             rejected.append(m_proposed.numpy()[0])
+
+#     return accepted, rejected
+
+
+# def plot_dist(loc, cov):
+#     x, y = np.mgrid[-4:4:.01, -4:4:.01]
+#     pos = np.empty(x.shape + (2,))
+#     pos[:, :, 0] = x
+#     pos[:, :, 1] = y
+#     rv = multivariate_normal(loc, cov)
+# #     plt.contour(x, y, rv.pdf(pos),np.arange(0.00001,0.0007,0.0001))
+#     plt.contour(x, y, rv.pdf(pos), [1., 3, 10.], cmap=plt.get_cmap('hot'))
+#     plt.xlabel("x1")
+#     plt.ylabel("x2")

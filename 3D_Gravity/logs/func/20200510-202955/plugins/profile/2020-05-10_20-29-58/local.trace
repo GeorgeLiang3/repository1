@@ -1,0 +1,6 @@
+
+(1$
+	/host:CPU1á
+ZMQbg/1á")1áTFE_DeleteTensorHandleH€¹æ¨PÀ„=",1áTFE_Py_FastPathExecute_CHÀè²»P€½ƒ")1áTFE_DeleteTensorHandleHÀ°ƒÃPÀ„="%1áTFE_DeleteTensorHandleHÀ¹ıÃ",1áEagerExecute: LogicalAndHÀÂ÷ÄPÀÕ‡	"11áEagerLocalExecute: LogicalAndH€Ç´ÅP€ÑÊ"01áValidateInputTypeAndPlacementHÀÔëÆPÀ„="&1áEagerKernelExecuteHÀİåÇPÀ¨¥")1áLogicalAnd:LogicalAndH€ëœÉP€’ô",1áTFE_Py_FastPathExecute_CHÀ˜–éP€ã¾
+"*1áEagerExecute: IdentityHÀ×ìïPÀŸ«"/1áEagerLocalExecute: IdentityH€Ü©ğP€›î",1áValidateInputTypeAndPlacementH€å£ñ"%1áEagerKernelExecuteHÀéàñP€‰z" 1áIdentity:IdentityH€îò",1áTFE_Py_FastPathExecute_CH€›€÷P€’ô"%1áTFE_DeleteTensorHandleHÀ«¸¡"%1áTFE_DeleteTensorHandleHÀü‚ª".1áEagerExecute: WriteSummaryHÀÄÓ±P€ì¸"@1á-TensorHandle::GetResourceHandleInfo WaitReadyHÀÄÓ±PÀ„="31áEagerLocalExecute: WriteSummaryHÀÍÍ²P€ã¾
+"&1áEagerKernelExecuteHÀÖÇ³P€ÚÄ	",1áValidateInputTypeAndPlacementHÀÖÇ³"-1áWriteSummary:WriteSummaryHÀßÁ´P€ÑÊ")1áTFE_DeleteTensorHandleH€¾Ã¾P€‰z")1áTFE_DeleteTensorHandleH€Ç½¿PÀ„=")1áTFE_DeleteTensorHandleHÀËú¿PÀ„=")1áTFE_DeleteTensorHandleHÀ“ËÇPÀ„=")1áTFE_DeleteTensorHandleHÀœÅÈPÀ„="%1áTFE_DeleteTensorHandleHÀÛ›Ï"%1áTFE_DeleteTensorHandleH€àØÏ
