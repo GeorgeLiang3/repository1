@@ -9,6 +9,7 @@ import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
 tfd = tfp.distributions
+import matplotlib.colors as colors
 
 
 class Rosenbrock_dist:
@@ -20,7 +21,7 @@ class Rosenbrock_dist:
         # prior
         self.mu = mu
         self.cov = cov
-
+        self.post = None
         self.c = 0  # mean of observations
         self.N = 100  # number of observation data
         self.sigma2y = 1  # standard deviation of observation data
@@ -58,31 +59,41 @@ class Rosenbrock_dist:
 # calculate the posterior density
 
     def full_post(self):
-        self.x_1, self.y_1 = np.mgrid[-2:2:.03, -2:2:.03]
+        self.x_1, self.y_1 = np.mgrid[-1:1:.01, -1:1:.01]
         pos = np.empty(self.x_1.shape + (2,), dtype=np.float32)
         pos[:, :, 0] = self.x_1
         pos[:, :, 1] = self.y_1
         pos = tf.convert_to_tensor(pos)
         post = np.empty(self.x_1.shape)
-        for i in range(np.arange(-2, 2, .03).shape[0]):
-            for j in range(np.arange(-2, 2, .03).shape[0]):
+        for i in range(np.arange(-1, 1, .01).shape[0]):
+            for j in range(np.arange(-1, 1, .01).shape[0]):
                 post[i][j] = self.joint_log_post(
                     tf.convert_to_tensor([pos[i][j]]))
         return post
 
-    def draw_post(self, post=None, title=None):
+    def draw_post(self, title=None):
+
+
+        if self.post is None:
+            self.post = self.full_post()
+
+        fig,ax = plt.subplots()
+
         Min = tf.constant([[-0.7, 0.5]])
-        Max = tf.constant([[0.68, 0.48]])
-        space = np.linspace(self.joint_log_post(Min), self.joint_log_post(Max),5)
+        # Max = tf.constant([[0.68, 0.48]])
+        space = np.linspace(self.joint_log_post(Min), np.max(self.post),20)
         space = np.squeeze(space, axis=1)
 
-        if post is None:
-            post = self.full_post()
-        plt.contour(self.x_1, self.y_1, post, levels=space, alpha=0.7,cmap =  'Greys')
+        ax.contour(self.x_1, self.y_1, self.post,
+                    norm=colors.SymLogNorm(linthresh=0.03, linscale=0.03,
+                                              vmin=self.joint_log_post(Min), vmax=np.max(self.post)),
+                    levels=space, alpha=0.7,cmap =  'Greys')
 
         if title is not None:
-            plt.title(title)
-        plt.xlim(-1, 1.2)
-        plt.ylim(-0.3, 1.)
-        plt.xlabel("x1", fontsize=15)
-        plt.ylabel("x2", fontsize=15)
+            ax.title(title)
+        ax.set_xlim(-1, 1.2)
+        ax.set_ylim(-0.3, 1.)
+        ax.set_xlabel("x1", fontsize=15)
+        ax.set_ylabel("x2", fontsize=15)
+
+        return fig,ax

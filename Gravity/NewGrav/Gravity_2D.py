@@ -361,6 +361,8 @@ initial_chain_state = [
     depth * tf.ones([Number_para_os], dtype=tf.float64, name="init_t1"),
 ]
 
+initial_chain_state = [MAP]
+
 unnormalized_posterior_log_prob = lambda *args: model1.joint_log_post(Data,*args)
 
 def gauss_new_state_fn(scale, dtype):
@@ -405,7 +407,7 @@ pdense(x_RMH,y_RMH,std_RMH,M=10000,midpoint =0.2,title = 'Posterior by RMH, step
 plt.ylabel('depth (m)', fontsize=12)
 plt.xlabel('position (m)', fontsize =12)
 plt.savefig("/Users/zhouji/Documents/Presentations/EGU 2020/Presentation/Input/posterior_RMH.png")
-# pd.DataFrame(accepted_samples_RMH).to_csv('./RMH.txt')
+pd.DataFrame(accepted_samples_RMH).to_csv('./RMH.txt')
 
 samples_RMH = np.squeeze(samples)
 plt.figure()
@@ -429,8 +431,8 @@ def run_HMC():
         current_state=initial_chain_state,
         kernel=tfp.mcmc.HamiltonianMonteCarlo(
             target_log_prob_fn=unnormalized_posterior_log_prob,
-            step_size = 0.067,
-            num_leapfrog_steps = 3),
+            step_size = 0.04,
+            num_leapfrog_steps = 30),
         num_burnin_steps=number_burnin,
         num_steps_between_results=5,  # Thinning.
         parallel_iterations=1)
@@ -459,7 +461,7 @@ std_HMC = np.expand_dims(np.std(samples,0),1)
 pdense(x_HMC,y_HMC,std_HMC,M=10000,midpoint =0.2,title = 'Posterior by HMC, steps:{}, accept rate:{}%'.format(number_sample,100*accepted_samples_HMC.shape[0]/number_sample))
 plt.ylabel('depth (m)', fontsize=12)
 plt.xlabel('position (m)', fontsize =12)
-plt.savefig("/Users/zhouji/Documents/Presentations/EGU 2020/Presentation/Input/posterior_HMC.png")
+# plt.savefig("/Users/zhouji/Documents/Presentations/EGU 2020/Presentation/Input/posterior_HMC.png")
 
 plt.figure()
 samples_HMC = np.squeeze(samples)
@@ -469,7 +471,7 @@ plt.title('Trace plot HMC')
 plt.ylabel('depth')
 plt.xlabel('iterations')
 plt.legend(loc='lower left')
-plt.savefig("/Users/zhouji/Documents/Presentations/EGU 2020/Presentation/Input/trace_plot_HMC.png")
+# plt.savefig("/Users/zhouji/Documents/Presentations/EGU 2020/Presentation/Input/trace_plot_HMC.png")
 
 
 ### gpCN
@@ -495,7 +497,7 @@ std_gpCN = np.expand_dims(np.std(samples_gpCN,0),1)
 pdense(x_gpCN, y_gpCN, std_gpCN, M=10000, midpoint=0.2, title='Posterior by gpCN, steps:{}, accept rate:{}%'.format(number_sample,100*accepted_samples_gpCN.shape[0]/number_sample))
 plt.ylabel('depth (m)', fontsize=12)
 plt.xlabel('position (m)',fontsize=12)
-plt.savefig("/Users/zhouji/Documents/Presentations/EGU 2020/Presentation/Input/posterior_gpcn.png")
+# plt.savefig("/Users/zhouji/Documents/Presentations/EGU 2020/Presentation/Input/posterior_gpcn.png")
 
 
 plt.figure()
@@ -505,7 +507,7 @@ plt.title('Trace plot gpCN')
 plt.ylabel('depth')
 plt.xlabel('iterations')
 plt.legend(loc = 'lower left')
-plt.savefig("/Users/zhouji/Documents/Presentations/EGU 2020/Presentation/Input/trace_plot_gpCN.png")
+# plt.savefig("/Users/zhouji/Documents/Presentations/EGU 2020/Presentation/Input/trace_plot_gpCN.png")
 
 ### Plot Autocorrelation
 
@@ -528,5 +530,25 @@ plt.savefig("/Users/zhouji/Documents/Presentations/EGU 2020/Presentation/Input/a
 ax3=autocorrelation_plot(samples_gpCN[:, 0])
 ax3.set_xlim(0, 300)
 label(ax3, 'gpCN')
-plt.savefig("/Users/zhouji/Documents/Presentations/EGU 2020/Presentation/Input/acrr_gpCN.png")
+# plt.savefig("/Users/zhouji/Documents/Presentations/EGU 2020/Presentation/Input/acrr_gpCN.png")
 
+
+
+sys.path.append('/Users/zhouji/Google Drive/RWTH/')
+from Neff import Neff
+
+n = Neff()
+
+def AvgNeff(ss):
+  nef=0
+  for i in range(ss.shape[1]):
+    s = pd.Series(ss[:,i])
+    nef += (n(s))
+
+  avg_neg = nef/ss.shape[1]
+  return avg_neg
+
+Neff_list = []
+for ss_list in [samples_RMH,samples_HMC,samples_gpCN]:
+  print(AvgNeff(ss_list))
+  Neff_list.append(AvgNeff(ss_list))
