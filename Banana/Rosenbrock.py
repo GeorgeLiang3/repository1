@@ -52,7 +52,7 @@ class Rosenbrock_dist:
         # define likelihood
         y = tfd.Normal(loc=tf.negative((0.3-theta[:,0])**2+80*(theta[:,1]-theta[:,0]**2)**2), scale=self.sigma2y)
         # return the posterior probability
-        return(mvn.log_prob(tf.squeeze(theta))
+        return (mvn.log_prob(tf.squeeze(theta))
                + tf.reduce_sum(y.log_prob(D_n), axis=0))
 
 
@@ -70,6 +70,7 @@ class Rosenbrock_dist:
                 post[i][j] = self.joint_log_post(
                     tf.convert_to_tensor([pos[i][j]]))
         return post
+    
 
     def draw_post(self, title=None):
 
@@ -87,7 +88,8 @@ class Rosenbrock_dist:
         ax.contour(self.x_1, self.y_1, self.post,
                     norm=colors.SymLogNorm(linthresh=0.03, linscale=0.03,
                                               vmin=self.joint_log_post(Min), vmax=np.max(self.post)),
-                    levels=space, alpha=0.7,cmap =  'Greys')
+                    levels=space, alpha=0.7,cmap =  'Greys'
+                    )
 
         if title is not None:
             ax.title(title)

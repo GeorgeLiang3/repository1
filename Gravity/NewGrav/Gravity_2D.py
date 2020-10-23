@@ -61,8 +61,7 @@ True_position_sin = 20*tf.sin(0.01*control_index)+depth
 ### Plotting function
 
 def pdense(x, y, sigma,M=1000,midpoint = 0.2,lable=True, **kwargs):
-    """ Plot probability density of y with known stddev sigma
-    """
+    """ Plot probability density of y with known stddev sigma"""
     assert len(x) == len(y) and len(x) == len(sigma)
     N = len(x)
     # TODO: better y ranging
@@ -406,7 +405,7 @@ std_RMH = np.expand_dims(np.std(samples,0),1)
 pdense(x_RMH,y_RMH,std_RMH,M=10000,midpoint =0.2,title = 'Posterior by RMH, steps:{}, accept rate:{}%'.format(number_sample,100*accepted_samples_RMH.shape[0]/number_sample))
 plt.ylabel('depth (m)', fontsize=12)
 plt.xlabel('position (m)', fontsize =12)
-plt.savefig("/Users/zhouji/Documents/Presentations/EGU 2020/Presentation/Input/posterior_RMH.png")
+# plt.savefig("/Users/zhouji/Documents/Presentations/EGU 2020/Presentation/Input/posterior_RMH.png")
 pd.DataFrame(accepted_samples_RMH).to_csv('./RMH.txt')
 
 samples_RMH = np.squeeze(samples)
@@ -417,7 +416,7 @@ plt.title('Trace plot RMH')
 plt.ylabel('depth')
 plt.xlabel('iterations')
 plt.legend(loc='lower left')
-plt.savefig("/Users/zhouji/Documents/Presentations/EGU 2020/Presentation/Input/trace_plot_RMH.png")
+# plt.savefig("/Users/zhouji/Documents/Presentations/EGU 2020/Presentation/Input/trace_plot_RMH.png")
 
 
 ### HMC
@@ -519,13 +518,13 @@ def label(ax, string):
 ax1 = autocorrelation_plot(samples_RMH[:, 0])
 ax1.set_xlim(0, 300)
 label(ax1, 'RMH')
-plt.savefig("/Users/zhouji/Documents/Presentations/EGU 2020/Presentation/Input/acrr_RMH.png")
+# plt.savefig("/Users/zhouji/Documents/Presentations/EGU 2020/Presentation/Input/acrr_RMH.png")
 
 
 ax2=autocorrelation_plot(samples_HMC[:, 0])
 ax2.set_xlim(0, 300)
 label(ax2, 'HMC')
-plt.savefig("/Users/zhouji/Documents/Presentations/EGU 2020/Presentation/Input/acrr_HMC.png")
+# plt.savefig("/Users/zhouji/Documents/Presentations/EGU 2020/Presentation/Input/acrr_HMC.png")
 
 ax3=autocorrelation_plot(samples_gpCN[:, 0])
 ax3.set_xlim(0, 300)
@@ -534,21 +533,30 @@ label(ax3, 'gpCN')
 
 
 
-sys.path.append('/Users/zhouji/Google Drive/RWTH/')
-from Neff import Neff
+# sys.path.append('/Users/zhouji/Google Drive/RWTH/')
+# from Neff import Neff
 
-n = Neff()
+# n = Neff()
 
-def AvgNeff(ss):
-  nef=0
-  for i in range(ss.shape[1]):
-    s = pd.Series(ss[:,i])
-    nef += (n(s))
+# def AvgNeff(ss):
+#   nef=0
+#   for i in range(ss.shape[1]):
+#     s = pd.Series(ss[:,i])
+#     nef += (n(s))
 
-  avg_neg = nef/ss.shape[1]
-  return avg_neg
+#   avg_neg = nef/ss.shape[1]
+#   return avg_neg
 
-Neff_list = []
-for ss_list in [samples_RMH,samples_HMC,samples_gpCN]:
-  print(AvgNeff(ss_list))
-  Neff_list.append(AvgNeff(ss_list))
+# Neff_list = []
+# for ss_list in [samples_RMH,samples_HMC,samples_gpCN]:
+#   print(AvgNeff(ss_list))
+#   Neff_list.append(AvgNeff(ss_list))
+
+import corner
+figure = corner.corner(samples_HMC[:,:30])
+
+plt.imshow(np.cov(samples_HMC.T))
+# plt.savefig('/Users/zhouji/Documents/Presentations/IRTG 2020/figs/HMC_post_cov.png', dpi=500)
+
+plt.imshow(np.linalg.inv(New_Hessian))
+# plt.savefig('/Users/zhouji/Documents/Presentations/IRTG 2020/figs/Lap_approx.png', dpi=500)
