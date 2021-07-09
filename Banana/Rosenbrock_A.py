@@ -25,7 +25,7 @@ class Rosenbrock_dist:
         self.post = None
         self.c = 0  # mean of observations
         self.N = 100  # number of observation data
-        self.sigma2y = 1  # standard deviation of observation data
+        self.sigma2y = 3  # standard deviation of observation data
         # generate the observation data
         np.random.seed(121)
         self.y_ = np.random.normal(loc=self.c, scale=self.sigma2y, size=self.N)
@@ -44,15 +44,17 @@ class Rosenbrock_dist:
         # define random variables prior
 
         D_n = tf.reshape(self.D, [self.D.shape[0], 1])
-        D_n = tf.tile(D_n, [1, theta.shape[0]])
+        # D_n = tf.tile(D_n, theta.shape[0])
 
         mvn = tfd.MultivariateNormalTriL(
             loc=self.mu,
             scale_tril=tf.linalg.cholesky(self.cov))
 
         # define likelihood
-        # y = -(0.3 - x1^2 + 80*(x2-x1^2))
-        y = tfd.Normal(loc=tf.negative((0.3-theta[:,0])**2+80*(theta[:,1]-theta[:,0]**2)**2), scale=self.sigma2y)
+        ## y = -(0.3 - x1^2 + 80*(x2-x1^2))
+        # y = tfd.Normal(loc=tf.negative((0.3-theta[0])**2+80*(theta[1]-*theta[0]**2)**2), scale=self.sigma2y)
+        ## y = -(0.3 - x1^2 + 30*(x2-0.1x1^2))
+        y = tfd.Normal(loc=tf.negative((0.3-theta[0])**2+30*(theta[1]-0.1*theta[0]**2)**2), scale=self.sigma2y)
         # return the posterior probability
         return(mvn.log_prob(tf.squeeze(theta))
                + tf.reduce_sum(y.log_prob(D_n), axis=0))
@@ -70,7 +72,7 @@ class Rosenbrock_dist:
         for i in range(np.arange(-1, 1.3, .01).shape[0]):
             for j in range(np.arange(-1, 1, .01).shape[0]):
                 post[i][j] = self.joint_log_post(
-                    tf.convert_to_tensor([pos[i][j]]))
+                    tf.convert_to_tensor(pos[i][j]))
         return post
 
     def draw_post(self, title=None):
@@ -81,7 +83,7 @@ class Rosenbrock_dist:
 
         fig,ax = plt.subplots()
 
-        Min = tf.constant([[-0.7, 0.5]])
+        Min = tf.constant([-0.7, 0.3])
         # Max = tf.constant([[0.68, 0.48]])
 
         ## define a log space for better contour plot
@@ -104,7 +106,7 @@ class Rosenbrock_dist:
 
         # cmap,norm = from_levels_and_colors(space,plt.cm.PuBu(vals))
 
-        f = ax.contourf(self.x_1, self.y_1, self.post,
+        ax.contourf(self.x_1, self.y_1, self.post,
                     # norm=colors.SymLogNorm(linthresh=0.03, linscale=0.03,
                     #                           vmin=self.joint_log_post(Min), vmax=np.max(self.post)), 
                     levels=space, alpha=0.7,cmap =  'PuBu')
@@ -114,7 +116,7 @@ class Rosenbrock_dist:
         if title is not None:
             ax.title(title)
         ax.set_xlim(-1, 1.2)
-        ax.set_ylim(-0.3, 1.)
+        ax.set_ylim(-0.6, 1.)
         ax.set_xlabel("x1", fontsize=15)
         ax.set_ylabel("x2", fontsize=15)
 
